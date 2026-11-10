@@ -9,7 +9,7 @@ import { createTheme } from "@mui/material/styles";
 const theme = createTheme({
   palette: {
     mode: "light",
-    primary: { main: "#1d9e75" }, // calm teal-green
+    primary: { main: "#0e90a8" }, // calm blue-leaning teal
     secondary: { main: "#534ab7" }, // soft purple
     background: { default: "#f7f8f6", paper: "#ffffff" },
   },
