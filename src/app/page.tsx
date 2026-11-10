@@ -32,11 +32,11 @@ export default function Home() {
           clear safe-to-spend number, and a calm, no-shame design.
         </Typography>
         <Stack direction="row" spacing={2}>
-          <Button variant="contained" size="large">
+          <Button variant="contained" size="large" href="/signup">
             Get started
           </Button>
-          <Button variant="outlined" size="large">
-            Learn more
+          <Button variant="outlined" size="large" href="/login">
+            Log in
           </Button>
         </Stack>
       </Box>
