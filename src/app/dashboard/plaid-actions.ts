@@ -78,6 +78,8 @@ export async function connectBank(publicToken: string) {
     bank_name: institutionName,
     account_name: acct.name,
     balance: acct.balances.current,
+    account_type: acct.type,
+    account_subtype: acct.subtype,
   }));
   const { data: insertedAccounts } = await supabase
     .from("linked_accounts")
@@ -136,6 +138,27 @@ export async function refreshTransactions() {
       await new Promise((r) => setTimeout(r, 2000));
     }
   }
+  revalidatePath("/dashboard");
+}
+
+// Remove all of this user's bank connections and the transactions that came
+// from them. Useful for cleaning up test connections.
+export async function disconnectAllBanks() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  // Delete imported transactions (keep any the user added by hand).
+  await supabase
+    .from("transactions")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("is_manual", false);
+  // Deleting the connection cascades to its linked accounts.
+  await supabase.from("plaid_items").delete().eq("user_id", user.id);
+
   revalidatePath("/dashboard");
 }
 

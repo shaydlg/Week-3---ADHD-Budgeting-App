@@ -1,7 +1,11 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { markBillPaid, deleteBill } from "./actions";
-import { refreshTransactions, connectSandboxBank } from "./plaid-actions";
+import {
+  refreshTransactions,
+  connectSandboxBank,
+  disconnectAllBanks,
+} from "./plaid-actions";
 import AddBillForm from "./AddBillForm";
 import ConnectBankButton from "./ConnectBankButton";
 import SignOutButton from "@/components/SignOutButton";
@@ -29,6 +33,7 @@ type Account = {
   bank_name: string;
   account_name: string | null;
   balance: number | null;
+  account_subtype: string | null;
 };
 
 type Txn = {
@@ -69,6 +74,17 @@ export default async function DashboardPage() {
   const bills = (billsData ?? []) as Bill[];
   const totalSpent = txns.reduce((sum, t) => sum + Number(t.amount), 0);
 
+  // Safe to spend = money in checking/savings minus bills not yet paid.
+  const spendable = accounts
+    .filter(
+      (a) => a.account_subtype === "checking" || a.account_subtype === "savings"
+    )
+    .reduce((sum, a) => sum + Number(a.balance ?? 0), 0);
+  const upcomingBillsTotal = bills
+    .filter((b) => b.status !== "paid")
+    .reduce((sum, b) => sum + Number(b.amount), 0);
+  const safeToSpend = spendable - upcomingBillsTotal;
+
   return (
     <Container maxWidth="sm">
       <Box sx={{ display: "flex", flexDirection: "column", gap: 4, py: 6 }}>
@@ -81,6 +97,28 @@ export default async function DashboardPage() {
         <Typography variant="body2" color="text.secondary" sx={{ mt: -3 }}>
           Signed in as {user.email}
         </Typography>
+
+        {/* SAFE TO SPEND */}
+        <Card variant="outlined">
+          <CardContent>
+            <Typography variant="overline" color="text.secondary">
+              Safe to spend
+            </Typography>
+            <Typography
+              variant="h3"
+              sx={{
+                fontWeight: 700,
+                color: safeToSpend >= 0 ? "primary.main" : "warning.main",
+              }}
+            >
+              {money(safeToSpend)}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {money(spendable)} in checking and savings, minus{" "}
+              {money(upcomingBillsTotal)} in upcoming bills.
+            </Typography>
+          </CardContent>
+        </Card>
 
         {/* ACCOUNTS */}
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -115,6 +153,13 @@ export default async function DashboardPage() {
             <form action={connectSandboxBank}>
               <Button type="submit" size="small" variant="text">
                 Or load a sandbox test bank
+              </Button>
+            </form>
+          )}
+          {accounts.length > 0 && (
+            <form action={disconnectAllBanks}>
+              <Button type="submit" size="small" variant="text" color="error">
+                Disconnect all banks
               </Button>
             </form>
           )}
