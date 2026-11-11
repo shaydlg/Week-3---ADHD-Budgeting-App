@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { editBill, markBillPaid, deleteBill } from "./actions";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -26,8 +27,15 @@ function money(n: number) {
 }
 
 export default function BillItem({ bill }: { bill: Bill }) {
+  const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [recurrence, setRecurrence] = useState(bill.recurrence);
+
+  async function handleSave(formData: FormData) {
+    await editBill(formData);
+    setEditing(false);
+    router.refresh();
+  }
 
   if (editing) {
     return (
@@ -35,7 +43,7 @@ export default function BillItem({ bill }: { bill: Bill }) {
         <CardContent>
           <Box
             component="form"
-            action={editBill}
+            action={handleSave}
             sx={{ display: "flex", flexDirection: "column", gap: 2 }}
           >
             <input type="hidden" name="id" value={bill.id} />
