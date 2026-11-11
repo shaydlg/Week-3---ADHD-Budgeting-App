@@ -108,9 +108,15 @@ export default function BillItem({ bill }: { bill: Bill }) {
         >
           <Box>
             <Typography sx={{ fontWeight: 600 }}>{bill.name}</Typography>
-            <Typography variant="body2" color="text.secondary">
-              {money(Number(bill.amount))} · due {bill.due_date}
-              {bill.recurrence !== "none" ? ` · ${bill.recurrence}` : ""}
+            <Typography variant="body2">
+              <Box component="span" sx={{ color: "text.secondary" }}>
+                {money(Number(bill.amount))}
+              </Box>
+              <Box component="span" sx={{ color: "#707070" }}>
+                {" · due "}
+                {bill.due_date}
+                {bill.recurrence !== "none" ? ` · ${bill.recurrence}` : ""}
+              </Box>
             </Typography>
           </Box>
           <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>

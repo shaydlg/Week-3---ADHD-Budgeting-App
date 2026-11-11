@@ -166,7 +166,7 @@ export default async function DashboardPage() {
                               {a.account_name ? ` · ${a.account_name}` : ""}
                             </Typography>
                             {a.account_subtype && (
-                              <Typography variant="caption" color="#707070">
+                              <Typography variant="caption" sx={{ color: "#707070" }}>
                                 {a.account_subtype}
                               </Typography>
                             )}
