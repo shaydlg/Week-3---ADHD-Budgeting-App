@@ -12,6 +12,7 @@ import Chip from "@mui/material/Chip";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
+import SubmitButton from "./SubmitButton";
 
 type Bill = {
   id: string;
@@ -131,9 +132,13 @@ export default function BillItem({ bill }: { bill: Bill }) {
             </Button>
             <form action={deleteBill}>
               <input type="hidden" name="id" value={bill.id} />
-              <Button type="submit" size="small" color="error">
+              <SubmitButton
+                size="small"
+                color="error"
+                confirm={`Delete "${bill.name}"?`}
+              >
                 Delete
-              </Button>
+              </SubmitButton>
             </form>
           </Stack>
         </Stack>

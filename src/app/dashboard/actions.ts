@@ -20,8 +20,10 @@ export async function addBill(formData: FormData) {
   const due_date = String(formData.get("due_date") ?? "");
   const recurrence = String(formData.get("recurrence") ?? "none");
 
-  // Basic guard: skip if the essentials are missing or not a number.
-  if (!name || !due_date || Number.isNaN(amount)) return;
+  // Basic guard: skip if the essentials are missing, not a number, or negative.
+  // Validating input server-side (not just in the form) keeps a bad amount from
+  // ever reaching the database and throwing off "safe to spend."
+  if (!name || !due_date || Number.isNaN(amount) || amount < 0) return;
 
   await supabase.from("bills").insert({
     user_id: user.id,
@@ -76,7 +78,7 @@ export async function editBill(formData: FormData) {
   const amount = Number(formData.get("amount"));
   const due_date = String(formData.get("due_date") ?? "");
   const recurrence = String(formData.get("recurrence") ?? "none");
-  if (!id || !name || !due_date || Number.isNaN(amount)) return;
+  if (!id || !name || !due_date || Number.isNaN(amount) || amount < 0) return;
 
   await supabase
     .from("bills")

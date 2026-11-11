@@ -9,6 +9,7 @@ import {
 import AddBillForm from "./AddBillForm";
 import BillItem from "./BillItem";
 import ConnectBankButton from "./ConnectBankButton";
+import SubmitButton from "./SubmitButton";
 import SignOutButton from "@/components/SignOutButton";
 import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
@@ -176,9 +177,13 @@ export default async function DashboardPage() {
                             </Typography>
                             <form action={removeLinkedAccount}>
                               <input type="hidden" name="id" value={a.id} />
-                              <Button type="submit" size="small" color="error">
+                              <SubmitButton
+                                size="small"
+                                color="error"
+                                confirm="Remove this account and its imported transactions?"
+                              >
                                 Remove
-                              </Button>
+                              </SubmitButton>
                             </form>
                           </Stack>
                         </Stack>
@@ -197,9 +202,14 @@ export default async function DashboardPage() {
               )}
               {accounts.length > 0 && (
                 <form action={disconnectAllBanks}>
-                  <Button type="submit" size="small" variant="text" color="error">
+                  <SubmitButton
+                    size="small"
+                    variant="text"
+                    color="error"
+                    confirm="Disconnect all banks and delete imported transactions? Bills and anything you added by hand will stay."
+                  >
                     Disconnect all banks
-                  </Button>
+                  </SubmitButton>
                 </form>
               )}
             </Box>
@@ -219,9 +229,9 @@ export default async function DashboardPage() {
           <AccordionDetails>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <form action={refreshTransactions}>
-                <Button type="submit" size="small">
+                <SubmitButton size="small" pendingLabel="Refreshing...">
                   Refresh
-                </Button>
+                </SubmitButton>
               </form>
               {txns.length === 0 ? (
                 <Typography color="text.secondary">
