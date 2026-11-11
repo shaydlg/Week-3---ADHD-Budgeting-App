@@ -9,4 +9,10 @@ export const plaidClient = new PlaidClient({
     process.env.PLAID_ENV === "production"
       ? PlaidEnvironment.Production
       : PlaidEnvironment.Sandbox,
+  // Resilience: never let a slow or flaky Plaid call hang a server action.
+  // Every request times out after 15s, and the SDK retries up to 3 times with
+  // exponential backoff + jitter on the errors worth retrying (HTTP 408, 429
+  // rate limits, and 5xx), honouring any Retry-After header Plaid sends.
+  timeoutInSeconds: 15,
+  maxRetries: 3,
 });
