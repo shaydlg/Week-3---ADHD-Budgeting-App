@@ -1,21 +1,47 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { addBill } from "./actions";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import Button from "@mui/material/Button";
+import AddIcon from "@mui/icons-material/Add";
 
-// The form that adds a new bill. When submitted, it hands its values to the
-// addBill server action. The fields carry `name` attributes so their values
-// travel to the server automatically.
+// Shows a "+ Add a bill" button. Clicking it reveals the form; adding a bill
+// (or pressing Cancel) tidies the form away again.
 export default function AddBillForm() {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
   const [recurrence, setRecurrence] = useState("none");
 
+  async function handleAdd(formData: FormData) {
+    await addBill(formData);
+    setRecurrence("none");
+    setOpen(false);
+    router.refresh();
+  }
+
+  if (!open) {
+    return (
+      <Button
+        variant="outlined"
+        startIcon={<AddIcon />}
+        onClick={() => setOpen(true)}
+      >
+        Add a bill
+      </Button>
+    );
+  }
+
   return (
-    <Box component="form" action={addBill} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+    <Box
+      component="form"
+      action={handleAdd}
+      sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+    >
       <TextField name="name" label="Bill name" required fullWidth />
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
         <TextField
@@ -47,9 +73,14 @@ export default function AddBillForm() {
         <MenuItem value="weekly">Weekly</MenuItem>
         <MenuItem value="monthly">Monthly</MenuItem>
       </TextField>
-      <Button type="submit" variant="contained" size="large">
-        Add bill
-      </Button>
+      <Stack direction="row" spacing={1}>
+        <Button type="submit" variant="contained" size="large">
+          Add bill
+        </Button>
+        <Button type="button" size="large" onClick={() => setOpen(false)}>
+          Cancel
+        </Button>
+      </Stack>
     </Box>
   );
 }
