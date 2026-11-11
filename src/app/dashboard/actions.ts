@@ -63,3 +63,26 @@ export async function deleteBill(formData: FormData) {
 
   revalidatePath("/dashboard");
 }
+
+export async function editBill(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const id = String(formData.get("id") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const amount = Number(formData.get("amount"));
+  const due_date = String(formData.get("due_date") ?? "");
+  const recurrence = String(formData.get("recurrence") ?? "none");
+  if (!id || !name || !due_date || Number.isNaN(amount)) return;
+
+  await supabase
+    .from("bills")
+    .update({ name, amount, due_date, recurrence })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  revalidatePath("/dashboard");
+}

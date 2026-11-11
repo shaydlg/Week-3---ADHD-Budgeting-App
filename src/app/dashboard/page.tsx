@@ -1,32 +1,25 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { markBillPaid, deleteBill } from "./actions";
 import {
   refreshTransactions,
   connectSandboxBank,
   disconnectAllBanks,
 } from "./plaid-actions";
 import AddBillForm from "./AddBillForm";
+import BillItem from "./BillItem";
 import ConnectBankButton from "./ConnectBankButton";
 import SignOutButton from "@/components/SignOutButton";
 import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import Divider from "@mui/material/Divider";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
-
-type Bill = {
-  id: string;
-  name: string;
-  amount: number;
-  due_date: string;
-  recurrence: string;
-  status: string;
-};
+import Accordion from "@mui/material/Accordion";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 type Account = {
   id: string;
@@ -43,9 +36,29 @@ type Txn = {
   date: string;
 };
 
+type Bill = {
+  id: string;
+  name: string;
+  amount: number;
+  due_date: string;
+  recurrence: string;
+  status: string;
+};
+
 function money(n: number) {
   return `$${n.toFixed(2)}`;
 }
+
+// Shared look for every collapsible section, so all corners match.
+const accordionSx = {
+  border: 1,
+  borderColor: "divider",
+  borderRadius: 1,
+  overflow: "hidden",
+  "&:before": { display: "none" },
+  "&:first-of-type": { borderRadius: 1 },
+  "&:last-of-type": { borderRadius: 1 },
+};
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -57,7 +70,6 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // All reads are limited to this user's own rows by Row Level Security.
   const [{ data: accountsData }, { data: txnData }, { data: billsData }] =
     await Promise.all([
       supabase.from("linked_accounts").select("*").order("created_at"),
@@ -74,31 +86,32 @@ export default async function DashboardPage() {
   const bills = (billsData ?? []) as Bill[];
   const totalSpent = txns.reduce((sum, t) => sum + Number(t.amount), 0);
 
-  // Safe to spend = money in checking/savings minus bills not yet paid.
   const spendable = accounts
     .filter(
       (a) => a.account_subtype === "checking" || a.account_subtype === "savings"
     )
     .reduce((sum, a) => sum + Number(a.balance ?? 0), 0);
-  const upcomingBillsTotal = bills
-    .filter((b) => b.status !== "paid")
-    .reduce((sum, b) => sum + Number(b.amount), 0);
+  const upcomingBills = bills.filter((b) => b.status !== "paid");
+  const upcomingBillsTotal = upcomingBills.reduce(
+    (sum, b) => sum + Number(b.amount),
+    0
+  );
   const safeToSpend = spendable - upcomingBillsTotal;
 
   return (
     <Container maxWidth="sm">
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 4, py: 6 }}>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 3, py: 6 }}>
         <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
           <Typography variant="h4" component="h1" sx={{ fontWeight: 600 }}>
             Your money
           </Typography>
           <SignOutButton />
         </Stack>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: -3 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: -2 }}>
           Signed in as {user.email}
         </Typography>
 
-        {/* SAFE TO SPEND */}
+        {/* SAFE TO SPEND (always visible) */}
         <Card variant="outlined">
           <CardContent>
             <Typography variant="overline" color="text.secondary">
@@ -121,145 +134,129 @@ export default async function DashboardPage() {
         </Card>
 
         {/* ACCOUNTS */}
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Accounts
-          </Typography>
-          {accounts.length === 0 ? (
-            <Typography color="text.secondary">
-              No bank connected yet. Connect one to track spending automatically.
+        <Accordion defaultExpanded={false} disableGutters elevation={0} sx={accordionSx}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="h6" sx={{ fontWeight: 600, flexGrow: 1 }}>
+              Accounts
             </Typography>
-          ) : (
-            <Stack spacing={1}>
-              {accounts.map((a) => (
-                <Card key={a.id} variant="outlined">
-                  <CardContent>
-                    <Stack direction="row" sx={{ justifyContent: "space-between" }}>
-                      <Typography sx={{ fontWeight: 600 }}>
-                        {a.bank_name}
-                        {a.account_name ? ` · ${a.account_name}` : ""}
-                      </Typography>
-                      <Typography color="text.secondary">
-                        {a.balance != null ? money(Number(a.balance)) : "—"}
-                      </Typography>
-                    </Stack>
-                  </CardContent>
-                </Card>
-              ))}
-            </Stack>
-          )}
-          <ConnectBankButton />
-          {process.env.PLAID_ENV === "sandbox" && (
-            <form action={connectSandboxBank}>
-              <Button type="submit" size="small" variant="text">
-                Or load a sandbox test bank
-              </Button>
-            </form>
-          )}
-          {accounts.length > 0 && (
-            <form action={disconnectAllBanks}>
-              <Button type="submit" size="small" variant="text" color="error">
-                Disconnect all banks
-              </Button>
-            </form>
-          )}
-        </Box>
-
-        <Divider />
+            <Typography color="text.secondary" sx={{ mr: 2 }}>
+              {accounts.length > 0 ? `${accounts.length} accounts` : "none connected"}
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {accounts.length === 0 ? (
+                <Typography color="text.secondary">
+                  No bank connected yet. Connect one to track spending automatically.
+                </Typography>
+              ) : (
+                <Stack spacing={1}>
+                  {accounts.map((a) => (
+                    <Card key={a.id} variant="outlined">
+                      <CardContent>
+                        <Stack direction="row" sx={{ justifyContent: "space-between" }}>
+                          <Typography sx={{ fontWeight: 600 }}>
+                            {a.bank_name}
+                            {a.account_name ? ` · ${a.account_name}` : ""}
+                          </Typography>
+                          <Typography color="text.secondary">
+                            {a.balance != null ? money(Number(a.balance)) : "—"}
+                          </Typography>
+                        </Stack>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </Stack>
+              )}
+              <ConnectBankButton />
+              {process.env.PLAID_ENV === "sandbox" && (
+                <form action={connectSandboxBank}>
+                  <Button type="submit" size="small" variant="text">
+                    Or load a sandbox test bank
+                  </Button>
+                </form>
+              )}
+              {accounts.length > 0 && (
+                <form action={disconnectAllBanks}>
+                  <Button type="submit" size="small" variant="text" color="error">
+                    Disconnect all banks
+                  </Button>
+                </form>
+              )}
+            </Box>
+          </AccordionDetails>
+        </Accordion>
 
         {/* SPENDING */}
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+        <Accordion defaultExpanded={false} disableGutters elevation={0} sx={accordionSx}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="h6" sx={{ fontWeight: 600, flexGrow: 1 }}>
               Recent spending
             </Typography>
-            <form action={refreshTransactions}>
-              <Button type="submit" size="small">
-                Refresh
-              </Button>
-            </form>
-          </Stack>
-          {txns.length === 0 ? (
-            <Typography color="text.secondary">
-              No transactions yet. Connect a bank, then press Refresh.
+            <Typography color="text.secondary" sx={{ mr: 2 }}>
+              {txns.length > 0 ? money(totalSpent) : "none yet"}
             </Typography>
-          ) : (
-            <>
-              <Typography color="text.secondary">
-                {money(totalSpent)} across your {txns.length} most recent
-                transactions
-              </Typography>
-              <Stack spacing={1}>
-                {txns.map((t) => (
-                  <Stack
-                    key={t.id}
-                    direction="row"
-                    sx={{ justifyContent: "space-between" }}
-                  >
-                    <Typography>{t.description ?? "Transaction"}</Typography>
-                    <Typography color="text.secondary">
-                      {money(Number(t.amount))} · {t.date}
-                    </Typography>
-                  </Stack>
-                ))}
-              </Stack>
-            </>
-          )}
-        </Box>
-
-        <Divider />
+          </AccordionSummary>
+          <AccordionDetails>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <form action={refreshTransactions}>
+                <Button type="submit" size="small">
+                  Refresh
+                </Button>
+              </form>
+              {txns.length === 0 ? (
+                <Typography color="text.secondary">
+                  No transactions yet. Connect a bank, then press Refresh.
+                </Typography>
+              ) : (
+                <Stack spacing={1}>
+                  {txns.map((t) => (
+                    <Stack
+                      key={t.id}
+                      direction="row"
+                      sx={{ justifyContent: "space-between" }}
+                    >
+                      <Typography>{t.description ?? "Transaction"}</Typography>
+                      <Typography color="text.secondary">
+                        {money(Number(t.amount))} · {t.date}
+                      </Typography>
+                    </Stack>
+                  ))}
+                </Stack>
+              )}
+            </Box>
+          </AccordionDetails>
+        </Accordion>
 
         {/* BILLS */}
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Bills
-          </Typography>
-          <AddBillForm />
-          {bills.length === 0 ? (
-            <Typography color="text.secondary">
-              No bills yet. Add your first one above.
+        <Accordion defaultExpanded={false} disableGutters elevation={0} sx={accordionSx}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="h6" sx={{ fontWeight: 600, flexGrow: 1 }}>
+              Bills
             </Typography>
-          ) : (
-            <Stack spacing={2}>
-              {bills.map((bill) => (
-                <Card key={bill.id} variant="outlined">
-                  <CardContent>
-                    <Stack direction="row" spacing={2} sx={{ justifyContent: "space-between", alignItems: "center" }}>
-                      <Box>
-                        <Typography sx={{ fontWeight: 600 }}>{bill.name}</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {money(Number(bill.amount))} · due {bill.due_date}
-                          {bill.recurrence !== "none" ? ` · ${bill.recurrence}` : ""}
-                        </Typography>
-                      </Box>
-                      <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                        <Chip
-                          label={bill.status}
-                          size="small"
-                          color={bill.status === "paid" ? "success" : "default"}
-                        />
-                        {bill.status !== "paid" && (
-                          <form action={markBillPaid}>
-                            <input type="hidden" name="id" value={bill.id} />
-                            <Button type="submit" size="small">
-                              Mark paid
-                            </Button>
-                          </form>
-                        )}
-                        <form action={deleteBill}>
-                          <input type="hidden" name="id" value={bill.id} />
-                          <Button type="submit" size="small" color="error">
-                            Delete
-                          </Button>
-                        </form>
-                      </Stack>
-                    </Stack>
-                  </CardContent>
-                </Card>
-              ))}
-            </Stack>
-          )}
-        </Box>
+            <Typography color="text.secondary" sx={{ mr: 2 }}>
+              {upcomingBills.length > 0
+                ? `${upcomingBills.length} upcoming`
+                : "none upcoming"}
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {bills.length === 0 ? (
+                <Typography color="text.secondary">
+                  No bills yet. Add one below.
+                </Typography>
+              ) : (
+                <Stack spacing={2}>
+                  {bills.map((bill) => (
+                    <BillItem key={bill.id} bill={bill} />
+                  ))}
+                </Stack>
+              )}
+              <AddBillForm />
+            </Box>
+          </AccordionDetails>
+        </Accordion>
       </Box>
     </Container>
   );
