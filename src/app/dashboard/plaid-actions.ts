@@ -67,25 +67,25 @@ export async function connectBank(publicToken: string) {
     .single();
   if (itemErr || !itemRow) return;
 
-  // Save each account, remembering how Plaid's account id maps to our row id.
+  // Save all accounts in one insert (fast), then map Plaid's account id to ours.
   const accountsRes = await plaidClient.accounts.get({
     access_token: accessToken,
   });
+  const accountRows = accountsRes.accounts.map((acct) => ({
+    user_id: user.id,
+    plaid_item_id: itemRow.id,
+    plaid_account_id: acct.account_id,
+    bank_name: institutionName,
+    account_name: acct.name,
+    balance: acct.balances.current,
+  }));
+  const { data: insertedAccounts } = await supabase
+    .from("linked_accounts")
+    .insert(accountRows)
+    .select("id, plaid_account_id");
   const accountIdMap = new Map<string, string>();
-  for (const acct of accountsRes.accounts) {
-    const { data: acctRow } = await supabase
-      .from("linked_accounts")
-      .insert({
-        user_id: user.id,
-        plaid_item_id: itemRow.id,
-        plaid_account_id: acct.account_id,
-        bank_name: institutionName,
-        account_name: acct.name,
-        balance: acct.balances.current,
-      })
-      .select("id")
-      .single();
-    if (acctRow) accountIdMap.set(acct.account_id, acctRow.id);
+  for (const row of insertedAccounts ?? []) {
+    if (row.plaid_account_id) accountIdMap.set(row.plaid_account_id, row.id);
   }
 
   await syncTransactions(accessToken, user.id, accountIdMap);
