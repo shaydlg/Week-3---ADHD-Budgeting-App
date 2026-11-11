@@ -4,6 +4,7 @@ import {
   refreshTransactions,
   connectSandboxBank,
   disconnectAllBanks,
+  removeLinkedAccount,
 } from "./plaid-actions";
 import AddBillForm from "./AddBillForm";
 import BillItem from "./BillItem";
@@ -16,6 +17,7 @@ import Typography from "@mui/material/Typography";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Button from "@mui/material/Button";
+import Divider from "@mui/material/Divider";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
@@ -49,7 +51,8 @@ function money(n: number) {
   return `$${n.toFixed(2)}`;
 }
 
-// Shared look for every collapsible section, so all corners match.
+// Shared look for every collapsible section: matching corners, and the header
+// title, stat, and caret aligned on one centered line.
 const accordionSx = {
   border: 1,
   borderColor: "divider",
@@ -58,6 +61,7 @@ const accordionSx = {
   "&:before": { display: "none" },
   "&:first-of-type": { borderRadius: 1 },
   "&:last-of-type": { borderRadius: 1 },
+  "& .MuiAccordionSummary-content": { alignItems: "center", my: 1.5 },
 };
 
 export default async function DashboardPage() {
@@ -107,14 +111,14 @@ export default async function DashboardPage() {
           </Typography>
           <SignOutButton />
         </Stack>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: -2 }}>
+        <Typography variant="body2" color="text.disabled" sx={{ mt: -2 }}>
           Signed in as {user.email}
         </Typography>
 
         {/* SAFE TO SPEND (always visible) */}
         <Card variant="outlined">
           <CardContent>
-            <Typography variant="overline" color="text.secondary">
+            <Typography variant="overline" color="text.disabled">
               Safe to spend
             </Typography>
             <Typography
@@ -139,7 +143,7 @@ export default async function DashboardPage() {
             <Typography variant="h6" sx={{ fontWeight: 600, flexGrow: 1 }}>
               Accounts
             </Typography>
-            <Typography color="text.secondary" sx={{ mr: 2 }}>
+            <Typography color="text.disabled" sx={{ mr: 2 }}>
               {accounts.length > 0 ? `${accounts.length} accounts` : "none connected"}
             </Typography>
           </AccordionSummary>
@@ -154,14 +158,29 @@ export default async function DashboardPage() {
                   {accounts.map((a) => (
                     <Card key={a.id} variant="outlined">
                       <CardContent>
-                        <Stack direction="row" sx={{ justifyContent: "space-between" }}>
-                          <Typography sx={{ fontWeight: 600 }}>
-                            {a.bank_name}
-                            {a.account_name ? ` · ${a.account_name}` : ""}
-                          </Typography>
-                          <Typography color="text.secondary">
-                            {a.balance != null ? money(Number(a.balance)) : "—"}
-                          </Typography>
+                        <Stack direction="row" spacing={1} sx={{ justifyContent: "space-between", alignItems: "center" }}>
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography sx={{ fontWeight: 600 }} noWrap>
+                              {a.bank_name}
+                              {a.account_name ? ` · ${a.account_name}` : ""}
+                            </Typography>
+                            {a.account_subtype && (
+                              <Typography variant="caption" color="text.disabled">
+                                {a.account_subtype}
+                              </Typography>
+                            )}
+                          </Box>
+                          <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexShrink: 0 }}>
+                            <Typography sx={{ fontWeight: 600 }}>
+                              {a.balance != null ? money(Number(a.balance)) : "—"}
+                            </Typography>
+                            <form action={removeLinkedAccount}>
+                              <input type="hidden" name="id" value={a.id} />
+                              <Button type="submit" size="small" color="error">
+                                Remove
+                              </Button>
+                            </form>
+                          </Stack>
                         </Stack>
                       </CardContent>
                     </Card>
@@ -193,7 +212,7 @@ export default async function DashboardPage() {
             <Typography variant="h6" sx={{ fontWeight: 600, flexGrow: 1 }}>
               Recent spending
             </Typography>
-            <Typography color="text.secondary" sx={{ mr: 2 }}>
+            <Typography color="text.disabled" sx={{ mr: 2 }}>
               {txns.length > 0 ? money(totalSpent) : "none yet"}
             </Typography>
           </AccordionSummary>
@@ -209,18 +228,30 @@ export default async function DashboardPage() {
                   No transactions yet. Connect a bank, then press Refresh.
                 </Typography>
               ) : (
-                <Stack spacing={1}>
+                <Stack divider={<Divider />}>
                   {txns.map((t) => (
-                    <Stack
+                    <Box
                       key={t.id}
-                      direction="row"
-                      sx={{ justifyContent: "space-between" }}
+                      sx={{ display: "flex", alignItems: "center", gap: 2, py: 1.2 }}
                     >
-                      <Typography>{t.description ?? "Transaction"}</Typography>
-                      <Typography color="text.secondary">
-                        {money(Number(t.amount))} · {t.date}
+                      <Typography
+                        variant="caption"
+                        color="text.disabled"
+                        sx={{ minWidth: 76, flexShrink: 0 }}
+                      >
+                        {t.date}
                       </Typography>
-                    </Stack>
+                      <Typography
+                        color="text.secondary"
+                        sx={{ flexGrow: 1, minWidth: 0 }}
+                        noWrap
+                      >
+                        {t.description ?? "Transaction"}
+                      </Typography>
+                      <Typography sx={{ fontWeight: 600, flexShrink: 0 }}>
+                        {money(Number(t.amount))}
+                      </Typography>
+                    </Box>
                   ))}
                 </Stack>
               )}
@@ -234,7 +265,7 @@ export default async function DashboardPage() {
             <Typography variant="h6" sx={{ fontWeight: 600, flexGrow: 1 }}>
               Bills
             </Typography>
-            <Typography color="text.secondary" sx={{ mr: 2 }}>
+            <Typography color="text.disabled" sx={{ mr: 2 }}>
               {upcomingBills.length > 0
                 ? `${upcomingBills.length} upcoming`
                 : "none upcoming"}

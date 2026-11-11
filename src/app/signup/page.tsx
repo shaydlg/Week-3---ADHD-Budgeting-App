@@ -11,11 +11,17 @@ import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
 import Link from "@mui/material/Link";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import CircularProgress from "@mui/material/CircularProgress";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
 export default function SignupPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -27,20 +33,22 @@ export default function SignupPage() {
     setLoading(true);
 
     const supabase = createClient();
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim().toLowerCase(),
+      password,
+    });
 
-    setLoading(false);
     if (error) {
       setError(error.message);
+      setLoading(false);
       return;
     }
     if (data.session) {
-      // Email confirmation is off: the user is logged in immediately.
       router.push("/dashboard");
       router.refresh();
     } else {
-      // Email confirmation is on: ask them to check their inbox.
       setMessage("Check your email to confirm your account, then log in.");
+      setLoading(false);
     }
   }
 
@@ -63,17 +71,41 @@ export default function SignupPage() {
           onChange={(e) => setEmail(e.target.value)}
           required
           autoComplete="email"
+          slotProps={{
+            htmlInput: { autoCapitalize: "none", autoCorrect: "off", spellCheck: false },
+          }}
         />
         <TextField
           label="Password"
-          type="password"
+          type={showPassword ? "text" : "password"}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
           autoComplete="new-password"
           helperText="At least 6 characters."
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    onClick={() => setShowPassword((s) => !s)}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            },
+          }}
         />
-        <Button type="submit" variant="contained" size="large" disabled={loading}>
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          disabled={loading}
+          startIcon={loading ? <CircularProgress size={18} color="inherit" /> : null}
+        >
           {loading ? "Creating account..." : "Sign up"}
         </Button>
         <Typography variant="body2" color="text.secondary">

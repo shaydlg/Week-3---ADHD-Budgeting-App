@@ -6,17 +6,22 @@ import NextLink from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
 import Link from "@mui/material/Link";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import CircularProgress from "@mui/material/CircularProgress";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -26,14 +31,18 @@ export default function LoginPage() {
     setLoading(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      // Lowercase + trim so phone auto-capitalisation does not block login.
+      email: email.trim().toLowerCase(),
+      password,
+    });
 
-    setLoading(false);
     if (error) {
       setError(error.message);
+      setLoading(false);
       return;
     }
-    // Success: go to the dashboard.
+    // Keep the button in its loading state through the redirect.
     router.push("/dashboard");
     router.refresh();
   }
@@ -56,16 +65,40 @@ export default function LoginPage() {
           onChange={(e) => setEmail(e.target.value)}
           required
           autoComplete="email"
+          slotProps={{
+            htmlInput: { autoCapitalize: "none", autoCorrect: "off", spellCheck: false },
+          }}
         />
         <TextField
           label="Password"
-          type="password"
+          type={showPassword ? "text" : "password"}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
           autoComplete="current-password"
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    onClick={() => setShowPassword((s) => !s)}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            },
+          }}
         />
-        <Button type="submit" variant="contained" size="large" disabled={loading}>
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          disabled={loading}
+          startIcon={loading ? <CircularProgress size={18} color="inherit" /> : null}
+        >
           {loading ? "Logging in..." : "Log in"}
         </Button>
         <Typography variant="body2" color="text.secondary">

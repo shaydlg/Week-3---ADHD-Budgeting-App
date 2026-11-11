@@ -162,6 +162,29 @@ export async function disconnectAllBanks() {
   revalidatePath("/dashboard");
 }
 
+// Remove a single linked account and its transactions.
+export async function removeLinkedAccount(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const id = String(formData.get("id") ?? "");
+  await supabase
+    .from("transactions")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("account_id", id);
+  await supabase
+    .from("linked_accounts")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  revalidatePath("/dashboard");
+}
+
 // Shared helper: fetch the last 30 days of transactions with /transactions/get
 // and save any we do not already have. Returns how many rows were saved.
 async function syncTransactions(

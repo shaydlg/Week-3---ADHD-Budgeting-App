@@ -97,7 +97,14 @@ export default function BillItem({ bill }: { bill: Bill }) {
   return (
     <Card variant="outlined">
       <CardContent>
-        <Stack direction="row" spacing={2} sx={{ justifyContent: "space-between", alignItems: "center" }}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={1.5}
+          sx={{
+            justifyContent: "space-between",
+            alignItems: { xs: "flex-start", sm: "center" },
+          }}
+        >
           <Box>
             <Typography sx={{ fontWeight: 600 }}>{bill.name}</Typography>
             <Typography variant="body2" color="text.secondary">
