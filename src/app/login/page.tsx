@@ -38,7 +38,11 @@ export default function LoginPage() {
     });
 
     if (error) {
-      setError(error.message);
+      // Supabase returns a terse "Invalid login credentials"; show a clearer one.
+      const friendly = /invalid|credential/i.test(error.message)
+        ? "That email or password isn't right. Please check and try again."
+        : error.message;
+      setError(friendly);
       setLoading(false);
       return;
     }

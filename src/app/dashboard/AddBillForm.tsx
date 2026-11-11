@@ -8,7 +8,6 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import Button from "@mui/material/Button";
-import AddIcon from "@mui/icons-material/Add";
 
 // Shows a "+ Add a bill" button. Clicking it reveals the form; adding a bill
 // (or pressing Cancel) tidies the form away again.
@@ -26,12 +25,8 @@ export default function AddBillForm() {
 
   if (!open) {
     return (
-      <Button
-        variant="outlined"
-        startIcon={<AddIcon />}
-        onClick={() => setOpen(true)}
-      >
-        Add a bill
+      <Button variant="outlined" onClick={() => setOpen(true)}>
+        + Add a bill
       </Button>
     );
   }

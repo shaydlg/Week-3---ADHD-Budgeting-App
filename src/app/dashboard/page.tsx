@@ -111,14 +111,14 @@ export default async function DashboardPage() {
           </Typography>
           <SignOutButton />
         </Stack>
-        <Typography variant="body2" color="text.disabled" sx={{ mt: -2 }}>
+        <Typography variant="body2" sx={{ mt: -2, color: "#707070" }}>
           Signed in as {user.email}
         </Typography>
 
         {/* SAFE TO SPEND (always visible) */}
         <Card variant="outlined">
           <CardContent>
-            <Typography variant="overline" color="text.disabled">
+            <Typography variant="overline" sx={{ color: "#707070" }}>
               Safe to spend
             </Typography>
             <Typography
@@ -143,7 +143,7 @@ export default async function DashboardPage() {
             <Typography variant="h6" sx={{ fontWeight: 600, flexGrow: 1 }}>
               Accounts
             </Typography>
-            <Typography color="text.disabled" sx={{ mr: 2 }}>
+            <Typography color="#707070" sx={{ mr: 2 }}>
               {accounts.length > 0 ? `${accounts.length} accounts` : "none connected"}
             </Typography>
           </AccordionSummary>
@@ -165,7 +165,7 @@ export default async function DashboardPage() {
                               {a.account_name ? ` · ${a.account_name}` : ""}
                             </Typography>
                             {a.account_subtype && (
-                              <Typography variant="caption" color="text.disabled">
+                              <Typography variant="caption" color="#707070">
                                 {a.account_subtype}
                               </Typography>
                             )}
@@ -212,7 +212,7 @@ export default async function DashboardPage() {
             <Typography variant="h6" sx={{ fontWeight: 600, flexGrow: 1 }}>
               Recent spending
             </Typography>
-            <Typography color="text.disabled" sx={{ mr: 2 }}>
+            <Typography color="#707070" sx={{ mr: 2 }}>
               {txns.length > 0 ? money(totalSpent) : "none yet"}
             </Typography>
           </AccordionSummary>
@@ -236,8 +236,7 @@ export default async function DashboardPage() {
                     >
                       <Typography
                         variant="caption"
-                        color="text.disabled"
-                        sx={{ minWidth: 76, flexShrink: 0 }}
+                        sx={{ minWidth: 76, flexShrink: 0, color: "#707070" }}
                       >
                         {t.date}
                       </Typography>
@@ -265,7 +264,7 @@ export default async function DashboardPage() {
             <Typography variant="h6" sx={{ fontWeight: 600, flexGrow: 1 }}>
               Bills
             </Typography>
-            <Typography color="text.disabled" sx={{ mr: 2 }}>
+            <Typography color="#707070" sx={{ mr: 2 }}>
               {upcomingBills.length > 0
                 ? `${upcomingBills.length} upcoming`
                 : "none upcoming"}
