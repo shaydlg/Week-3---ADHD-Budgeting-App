@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NextLink from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -23,7 +23,19 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // If we arrived here because the idle timeout signed the user out, explain why.
+  useEffect(() => {
+    try {
+      if (new URLSearchParams(window.location.search).get("timeout") === "1") {
+        setNotice(
+          "For your security, we signed you out after 5 minutes of inactivity. Please log in again."
+        );
+      }
+    } catch {}
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -61,6 +73,7 @@ export default function LoginPage() {
         <Typography variant="h4" component="h1" sx={{ fontWeight: 600 }}>
           Welcome back
         </Typography>
+        {notice && <Alert severity="info">{notice}</Alert>}
         {error && <Alert severity="error">{error}</Alert>}
         <TextField
           label="Email"

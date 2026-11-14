@@ -12,6 +12,7 @@ import BillItem from "./BillItem";
 import ConnectBankButton from "./ConnectBankButton";
 import SubmitButton from "./SubmitButton";
 import SignOutButton from "@/components/SignOutButton";
+import IdleTimeout from "@/components/IdleTimeout";
 import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
@@ -106,6 +107,8 @@ export default async function DashboardPage() {
 
   return (
     <Container maxWidth="sm">
+      {/* Signs the user out after 5 minutes of inactivity (see ADR-0009). */}
+      <IdleTimeout timeoutMs={5 * 60 * 1000} />
       <Box sx={{ display: "flex", flexDirection: "column", gap: 3, py: 6 }}>
         <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
           <Typography variant="h4" component="h1" sx={{ fontWeight: 600 }}>
