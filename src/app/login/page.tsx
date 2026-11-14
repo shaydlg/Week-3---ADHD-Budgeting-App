@@ -58,6 +58,11 @@ export default function LoginPage() {
       setLoading(false);
       return;
     }
+    // Start the new session with a clean idle timer; a leftover timestamp from
+    // a previous session would otherwise sign the user straight back out.
+    try {
+      localStorage.removeItem("lastActivityAt");
+    } catch {}
     // Keep the button in its loading state through the redirect.
     router.push("/dashboard");
     router.refresh();

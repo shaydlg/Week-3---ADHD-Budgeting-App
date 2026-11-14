@@ -87,6 +87,11 @@ export async function updateSession(request: NextRequest) {
       path: "/",
       maxAge: 60 * 60 * 24,
     });
+  } else if (request.cookies.has(ACTIVITY_COOKIE)) {
+    // No session (e.g. the login page): drop any leftover activity marker so a
+    // stale one from a previous session can't instantly bounce the next login
+    // back out "for inactivity." A fresh login then starts with a clean timer.
+    supabaseResponse.cookies.set(ACTIVITY_COOKIE, "", { maxAge: 0, path: "/" });
   }
 
   return supabaseResponse;
