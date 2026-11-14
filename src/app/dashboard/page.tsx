@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -238,29 +239,35 @@ export default async function DashboardPage() {
                   No transactions yet. Connect a bank, then press Refresh.
                 </Typography>
               ) : (
-                <Stack divider={<Divider />}>
-                  {txns.map((t) => (
-                    <Box
-                      key={t.id}
-                      sx={{ display: "flex", alignItems: "center", gap: 2, py: 1.2 }}
-                    >
-                      <Typography
-                        variant="caption"
-                        sx={{ minWidth: 76, flexShrink: 0, color: "#707070" }}
+                <Stack>
+                  {/* Dividers are interleaved by hand rather than via Stack's
+                      `divider` prop: in this MUI build that prop renders an
+                      undefined element and crashes the page once there are
+                      transactions to show. */}
+                  {txns.map((t, i) => (
+                    <Fragment key={t.id}>
+                      {i > 0 && <Divider />}
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 2, py: 1.2 }}
                       >
-                        {t.date}
-                      </Typography>
-                      <Typography
-                        color="text.secondary"
-                        sx={{ flexGrow: 1, minWidth: 0 }}
-                        noWrap
-                      >
-                        {t.description ?? "Transaction"}
-                      </Typography>
-                      <Typography sx={{ fontWeight: 600, flexShrink: 0 }}>
-                        {money(Number(t.amount))}
-                      </Typography>
-                    </Box>
+                        <Typography
+                          variant="caption"
+                          sx={{ minWidth: 76, flexShrink: 0, color: "#707070" }}
+                        >
+                          {t.date}
+                        </Typography>
+                        <Typography
+                          color="text.secondary"
+                          sx={{ flexGrow: 1, minWidth: 0 }}
+                          noWrap
+                        >
+                          {t.description ?? "Transaction"}
+                        </Typography>
+                        <Typography sx={{ fontWeight: 600, flexShrink: 0 }}>
+                          {money(Number(t.amount))}
+                        </Typography>
+                      </Box>
+                    </Fragment>
                   ))}
                 </Stack>
               )}
