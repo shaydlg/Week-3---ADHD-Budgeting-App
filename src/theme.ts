@@ -9,7 +9,10 @@ import { createTheme } from "@mui/material/styles";
 const theme = createTheme({
   palette: {
     mode: "light",
-    primary: { main: "#0e90a8" }, // calm blue-leaning teal
+    // Calm blue-leaning teal, darkened from #0e90a8 so white text on filled
+    // buttons (and the teal used for link/text buttons) clears WCAG 2.2 AA:
+    // #0a7f94 on white is 4.69:1, above the 4.5:1 minimum for normal text.
+    primary: { main: "#0a7f94", contrastText: "#ffffff" },
     secondary: { main: "#534ab7" }, // soft purple
     background: { default: "#f7f8f6", paper: "#ffffff" },
   },
