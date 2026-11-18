@@ -1,7 +1,7 @@
 # ADR-0004: Use Plaid for read-only bank data
 
 ## Date and status
-November 11, 2026. Accepted.
+November 11, 2026. Accepted. Extended by [ADR-0010](./0010-credit-cards-plaid-liabilities.md), which adds Plaid's Liabilities product for credit cards.
 
 ## Context
 A core feature is automatic spending tracking, which needs secure access to users' bank transactions. We must never see or store bank passwords.

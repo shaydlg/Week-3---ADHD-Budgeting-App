@@ -15,6 +15,8 @@ erDiagram
   LINKED_ACCOUNTS ||--o{ TRANSACTIONS : contains
   CATEGORIES ||--o{ TRANSACTIONS : tags
   BILLS ||--o{ REMINDERS : triggers
+  LINKED_ACCOUNTS ||--o| CARD_LIABILITIES : "has (planned)"
+  LINKED_ACCOUNTS ||--o{ BILLS : "card payment (planned)"
 
   PROFILES {
     uuid id PK
@@ -64,6 +66,17 @@ erDiagram
     date due_date
     text recurrence
     text status
+    uuid source_card_id FK "planned"
+    text basis "planned"
+  }
+  CARD_LIABILITIES {
+    uuid account_id PK "planned, FK to LINKED_ACCOUNTS"
+    uuid user_id FK "planned"
+    numeric statement_balance "planned"
+    numeric minimum_payment "planned"
+    date due_date "planned"
+    numeric current_balance "planned"
+    timestamptz last_refreshed_at "planned"
   }
   REMINDERS {
     uuid id PK
@@ -77,3 +90,8 @@ erDiagram
 
 Note: `USERS` is Supabase Auth's built-in `auth.users` table. Every other table
 links to it by `user_id` (and `PROFILES` by `id`).
+
+Items marked **planned** (`CARD_LIABILITIES`, and `BILLS.source_card_id` /
+`BILLS.basis`) are the credit-card additions from
+[ADR-0010](./adr/0010-credit-cards-plaid-liabilities.md); they ship in migration
+`0005_card_liabilities` (ticket T52) and are not yet in the database.
