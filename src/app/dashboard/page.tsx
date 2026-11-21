@@ -2,6 +2,13 @@ import { Fragment } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
+  totalSpent as calcTotalSpent,
+  spendableBalance as calcSpendable,
+  upcomingBills as calcUpcomingBills,
+  upcomingBillsTotal as calcUpcomingBillsTotal,
+  safeToSpend as calcSafeToSpend,
+} from "@/lib/budget";
+import {
   refreshTransactions,
   connectSandboxBank,
   disconnectAllBanks,
@@ -91,19 +98,12 @@ export default async function DashboardPage() {
   const accounts = (accountsData ?? []) as Account[];
   const txns = (txnData ?? []) as Txn[];
   const bills = (billsData ?? []) as Bill[];
-  const totalSpent = txns.reduce((sum, t) => sum + Number(t.amount), 0);
-
-  const spendable = accounts
-    .filter(
-      (a) => a.account_subtype === "checking" || a.account_subtype === "savings"
-    )
-    .reduce((sum, a) => sum + Number(a.balance ?? 0), 0);
-  const upcomingBills = bills.filter((b) => b.status !== "paid");
-  const upcomingBillsTotal = upcomingBills.reduce(
-    (sum, b) => sum + Number(b.amount),
-    0
-  );
-  const safeToSpend = spendable - upcomingBillsTotal;
+  // Budget math now lives in src/lib/budget.ts so it can be unit-tested.
+  const totalSpent = calcTotalSpent(txns);
+  const spendable = calcSpendable(accounts);
+  const upcomingBills = calcUpcomingBills(bills);
+  const upcomingBillsTotal = calcUpcomingBillsTotal(bills);
+  const safeToSpend = calcSafeToSpend(accounts, bills);
 
   return (
     <Container maxWidth="sm">

@@ -1,0 +1,89 @@
+# CI: the automated conveyor belt. GitHub runs this on every push and pull
+# request. If any check fails, the run goes red -- your signal not to merge.
+# See ADR-0005 (CI/CD) and ADR-0010 (credit cards).
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # Core quality gate. Needs no secrets, so it runs green from the first push.
+  quality:
+    name: Quality checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (code style)
+        run: npm run lint
+
+      - name: Type-check (does it compile?)
+        run: npm run typecheck
+
+      - name: Unit tests (the budget math)
+        run: npm test
+
+      - name: Gate-check Week 1 skills
+        run: npm run check:skills
+
+      - name: Build (does the app actually build?)
+        run: npm run build
+        env:
+          # Give the build the same public keys it has in production (Vercel),
+          # in case any page needs them while compiling. Safe if unset.
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+  # Browser smoke test. Needs the app to boot and reach Supabase, so it uses the
+  # public Supabase keys from repo secrets. Until those secrets are set, this job
+  # skips its steps and stays green; once set, it becomes a real gate.
+  e2e:
+    name: Browser smoke test
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Are the Supabase secrets set?
+        id: guard
+        run: |
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then
+            echo "has_secrets=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Supabase secrets not set - skipping the browser smoke test. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY as repository secrets to enable it."
+          else
+            echo "has_secrets=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Node
+        if: steps.guard.outputs.has_secrets == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.guard.outputs.has_secrets == 'true'
+        run: npm ci
+
+      - name: Install the Chromium browser
+        if: steps.guard.outputs.has_secrets == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Run the browser smoke test
+        if: steps.guard.outputs.has_secrets == 'true'
+        run: npm run test:e2e

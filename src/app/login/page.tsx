@@ -27,9 +27,13 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   // If we arrived here because the idle timeout signed the user out, explain why.
+  // We read the URL after mount (not during render) so the server's and browser's
+  // first paint match; setting state here is intentional, hence the scoped lint
+  // exception below.
   useEffect(() => {
     try {
       if (new URLSearchParams(window.location.search).get("timeout") === "1") {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- post-mount URL read keeps SSR hydration consistent
         setNotice(
           "For your security, we signed you out after 5 minutes of inactivity. Please log in again."
         );
