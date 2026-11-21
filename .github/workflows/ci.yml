@@ -40,6 +40,11 @@ jobs:
 
       - name: Build (does the app actually build?)
         run: npm run build
+        env:
+          # Give the build the same public keys it has in production (Vercel),
+          # in case any page needs them while compiling. Safe if unset.
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
   # Browser smoke test. Needs the app to boot and reach Supabase, so it uses the
   # public Supabase keys from repo secrets. Until those secrets are set, this job
