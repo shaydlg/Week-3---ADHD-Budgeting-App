@@ -63,7 +63,7 @@ export function upcomingBillsTotal(bills: BillLike[]): number {
  * spendable balance - total upcoming bills.
  */
 export function safeToSpend(accounts: AccountLike[], bills: BillLike[]): number {
-  return spendableBalance(accounts) - upcomingBillsTotal(bills);
+  return spendableBalance(accounts) + upcomingBillsTotal(bills);
 }
 
 /**
