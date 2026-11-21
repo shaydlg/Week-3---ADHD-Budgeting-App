@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isValidBill } from "@/lib/budget";
 
 // These functions run on the SERVER. Each one checks who is logged in, then
 // changes the database. Row Level Security makes sure a person can only ever
@@ -22,8 +23,9 @@ export async function addBill(formData: FormData) {
 
   // Basic guard: skip if the essentials are missing, not a number, or negative.
   // Validating input server-side (not just in the form) keeps a bad amount from
-  // ever reaching the database and throwing off "safe to spend."
-  if (!name || !due_date || Number.isNaN(amount) || amount < 0) return;
+  // ever reaching the database and throwing off "safe to spend." The rule lives
+  // in isValidBill (src/lib/budget.ts) so it has one tested home.
+  if (!isValidBill({ name, amount, due_date })) return;
 
   await supabase.from("bills").insert({
     user_id: user.id,
@@ -78,7 +80,7 @@ export async function editBill(formData: FormData) {
   const amount = Number(formData.get("amount"));
   const due_date = String(formData.get("due_date") ?? "");
   const recurrence = String(formData.get("recurrence") ?? "none");
-  if (!id || !name || !due_date || Number.isNaN(amount) || amount < 0) return;
+  if (!id || !isValidBill({ name, amount, due_date })) return;
 
   await supabase
     .from("bills")
