@@ -3,6 +3,13 @@
 ## Date and status
 November 21, 2026. Accepted. Delivers the pipeline promised in ADR-0005.
 
+## Outcome (the goal, stated plainly)
+Every time code is pushed to the ADHD Budgeting App, automatic checks should
+catch new bugs, regressions, broken budget math, and anything that violates the
+Week 1 engineering standards (accessibility, security, UX, architecture) before
+it reaches the live app. Anything that fails those checks should be blocked from
+merging, so `main` stays deployable and the app stays honest and calm for users.
+
 ## Context
 The app had no automated tests and no CI workflow, so a change could break the
 budget math, the build, or an engineering standard and still reach the live site.
@@ -34,6 +41,11 @@ Add automated testing and a CI pipeline, shaped like the testing pyramid.
   (including the ADR-0010 credit-card rules), the spending total, and bill
   validation. Pinned to Vitest v2 because v3 requires a newer `@types/node` than
   the project's v20.
+- **Coverage gate:** unit-test coverage of `src/lib/budget.ts` must stay at or
+  above 90% (Vitest's v8 coverage, enforced by `npm test`). Scoped to the tested
+  logic on purpose, so the gate is meaningful ("don't add untested budget math")
+  rather than a low, noisy whole-app number. It immediately caught two untested
+  null-handling branches, which we then covered.
 - **One validation rule, used for real:** `isValidBill` is the single source of
   truth and is now called by the `addBill`/`editBill` server actions, so the unit
   tests guard the code that actually runs.
