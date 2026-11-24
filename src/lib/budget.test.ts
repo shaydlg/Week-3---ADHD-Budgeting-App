@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { safeToSpend, totalSpent, isValidBill } from "./budget";
+import {
+  safeToSpend,
+  totalSpent,
+  isValidBill,
+  spendableBalance,
+} from "./budget";
 
 // A test file reads like a checklist of promises the code must keep.
 //   describe(...) groups related checks under one heading.
@@ -63,6 +68,23 @@ describe("safeToSpend with credit cards (ADR-0010)", () => {
 
     // Cash $500 minus the $200 card-payment bill = $300.
     expect(safeToSpend(accounts, billsWithCardPayment)).toBe(300);
+  });
+});
+
+// Real Plaid accounts can arrive with a missing balance or subtype, so the math
+// must handle nulls safely (a null balance counts as $0; a null subtype can't be
+// "checking"/"savings", so it's excluded).
+describe("spendableBalance with missing data", () => {
+  it("treats a null balance as $0 and ignores an account with no subtype", () => {
+    const accounts = [
+      { balance: 300, account_type: "depository", account_subtype: "checking" },
+      { balance: null, account_type: "depository", account_subtype: "savings" }, // null balance -> $0
+      { balance: 100, account_type: "depository", account_subtype: null }, // null subtype -> excluded
+    ];
+
+    // Only the $300 checking counts; the null balance adds $0; the no-subtype
+    // account is left out.
+    expect(spendableBalance(accounts)).toBe(300);
   });
 });
 
